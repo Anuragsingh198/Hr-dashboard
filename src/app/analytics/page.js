@@ -1,250 +1,171 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Bar, Line } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  PointElement,
-  LineElement,
-} from "chart.js";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useUsers } from "@/context/UserContext";
 import { useBookmarks } from "@/context/BookmarkContext";
-import { useTheme } from "@/context/ThemeContext";
+import DepartmentChart from "@/components/ui/DepartmentChart";
+import MonthlyTrendChart from "@/components/ui/MonthlyChart";
 
-// Register chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  PointElement,
-  LineElement
-);
-
-const AnalyticsPage = () => {
-  const { users, loading } = useUsers();
+export default function AnalyticsPage() {
+  const { users } = useUsers();
   const { bookmarks } = useBookmarks();
-  const { theme } = useTheme();
 
-  const [avgRatings, setAvgRatings] = useState({});
-  const [bookmarkTrends, setBookmarkTrends] = useState([]);
+  const totalEmployees = users.length;
+  const totalBookmarks = bookmarks.length;
+const avgPerformance =
+  users.length > 0
+    ? users.reduce(
+        (sum, user) =>
+          sum +
+          (typeof user.performanceRating === "number"
+            ? user.performanceRating
+            : Math.floor(Math.random() * 5) + 1),
+        0
+      ) / users.length
+    : 0;
 
-  useEffect(() => {
-    if (users.length > 0) {
-      const ratingsMap = {};
-      const counts = {};
+  const promotedCount = users.filter((user) => user.promoted).length;
 
-      users.forEach((user) => {
-        const dept = user.company.department;
-        ratingsMap[dept] = (ratingsMap[dept] || 0) + user.performanceRating;
-        counts[dept] = (counts[dept] || 0) + 1;
-      });
-
-      const averages = {};
-      for (const dept in ratingsMap) {
-        averages[dept] = parseFloat((ratingsMap[dept] / counts[dept]).toFixed(2));
-      }
-      setAvgRatings(averages);
-
-      const bookmarkedCount = users.filter((user) => bookmarks.includes(user.id)).length;
-      setBookmarkTrends([
-        Math.round(bookmarkedCount * 0.3),
-        Math.round(bookmarkedCount * 0.4),
-        Math.round(bookmarkedCount * 0.5),
-        Math.round(bookmarkedCount * 0.6),
-        Math.round(bookmarkedCount * 0.8),
-        bookmarkedCount - 2,
-        bookmarkedCount,
-      ]);
-    }
-  }, [users, bookmarks]);
-
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: { display: false },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        max: 5,
-        ticks: {
-          color: theme === "dark" ? "#9CA3AF" : "#6B7280",
-        },
-        grid: {
-          color: theme === "dark" ? "#374151" : "#E5E7EB",
-        },
-      },
-      x: {
-        ticks: {
-          color: theme === "dark" ? "#9CA3AF" : "#6B7280",
-        },
-        grid: {
-          color: theme === "dark" ? "#374151" : "#E5E7EB",
-        },
-      },
-    },
-  };
-
-  const lineChartOptions = { ...chartOptions };
-
-  if (loading) {
-    return (
-      <div className="p-6 space-y-6">
-        <Skeleton className="h-8 w-1/3" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-4 space-y-2">
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-6 w-1/4" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <div className="space-y-4">
-          <Skeleton className="h-64 w-full" />
-          <Skeleton className="h-64 w-full" />
-        </div>
-      </div>
-    );
+const departmentPerformance = users.reduce((acc, user) => {
+  const dept = user.company?.department;
+  if (!dept) return acc;
+  const rating = typeof user.performanceRating === "number"
+    ? user.performanceRating
+    : Math.floor(Math.random() * 5) + 1; 
+  if (!acc[dept]) {
+    acc[dept] = { count: 0, total: 0 };
   }
 
-  return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-        Employee Analytics Dashboard
-      </h1>
+  acc[dept].count++;
+  acc[dept].total += rating;
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              Total Users
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{users.length}</p>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              Bookmarked Users
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">
-              {users.filter((user) => bookmarks.includes(user.id)).length}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              Departments
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">
-              {new Set(users.map((user) => user.company.department)).size}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              Avg Rating
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">
-              {users.length > 0
-                ? (users.reduce((a, b) => a + b.performanceRating, 0) / users.length).toFixed(2)
-                : "0.00"}
-            </p>
-          </CardContent>
-        </Card>
+  return acc;
+}, {});
+
+
+  const topDepartments = Object.entries(departmentPerformance)
+    .map(([dept, stats]) => ({
+      department: dept,
+      avgRating: stats.total / stats.count,
+    }))
+    .sort((a, b) => b.avgRating - a.avgRating)
+    .slice(0, 3);
+
+  const statCards = [
+    {
+      title: "Total Employees",
+      value: totalEmployees,
+      change: "+12% from last month",
+      positive: true,
+    },
+    {
+      title: "Bookmarked Employees",
+      value: totalBookmarks,
+      change: `${Math.round(
+        (totalBookmarks / totalEmployees) * 100
+      )}% of total`,
+      positive: totalBookmarks > 0,
+    },
+    {
+      title: "Average Performance",
+      value: avgPerformance.toFixed(1),
+      change: "+0.3 from last quarter",
+      positive: true,
+    },
+    {
+      title: "Recently Promoted",
+      value: promotedCount,
+      change: `${Math.round(
+        (promotedCount / totalEmployees) * 100
+      )}% promotion rate`,
+      positive: true,
+    },
+  ];
+
+  return (
+    <div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Performance Analytics
+        </h1>
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          Track department performance and employee trends
+        </p>
       </div>
 
-      {/* Department-wise chart */}
-      <Card className="bg-white dark:bg-gray-800">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Department-wise Avg Ratings
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <Bar
-              data={{
-                labels: Object.keys(avgRatings),
-                datasets: [
-                  {
-                    label: "Average Rating",
-                    data: Object.values(avgRatings),
-                    backgroundColor: theme === "dark" ? "#6366F1" : "#3B82F6",
-                    borderColor: theme === "dark" ? "#818CF8" : "#2563EB",
-                    borderWidth: 1,
-                  },
-                ],
-              }}
-              options={chartOptions}
-            />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {statCards.map((stat, i) => (
+          <div
+            key={i}
+            className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700"
+          >
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              {stat.title}
+            </p>
+            <p className="mt-2 text-3xl font-semibold text-gray-900 dark:text-white">
+              {stat.value}
+            </p>
+            <div
+              className={`mt-2 flex items-center text-sm ${
+                stat.positive
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-red-600 dark:text-red-400"
+              }`}
+            >
+              <span>{stat.change}</span>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        ))}
+      </div>
 
-      {/* Trends chart */}
-      <Card className="bg-white dark:bg-gray-800">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Bookmark Trends (Last 7 Days)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <Line
-              data={{
-                labels: [
-                  "6 days ago",
-                  "5 days ago",
-                  "4 days ago",
-                  "3 days ago",
-                  "2 days ago",
-                  "Yesterday",
-                  "Today",
-                ],
-                datasets: [
-                  {
-                    label: "Bookmarks",
-                    data: bookmarkTrends,
-                    fill: false,
-                    borderColor: theme === "dark" ? "#F59E0B" : "#D97706",
-                    backgroundColor: theme === "dark" ? "#FBBF24" : "#F59E0B",
-                    tension: 0.1,
-                    pointBackgroundColor: theme === "dark" ? "#FCD34D" : "#F59E0B",
-                  },
-                ],
-              }}
-              options={lineChartOptions}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Top Performing Departments */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 mb-8">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+          Top Performing Departments
+        </h3>
+        <div className="space-y-4">
+          {topDepartments.map((dept, index) => (
+            <div key={index} className="flex items-center">
+              <div className="w-8 flex items-center justify-center">
+                <span
+                  className={`flex items-center justify-center w-6 h-6 rounded-full text-white text-xs bg-${
+                    index === 0 ? "amber" : index === 1 ? "gray" : "orange"
+                  }-${index === 0 ? "500" : index === 1 ? "400" : "600"}`}
+                >
+                  {index + 1}
+                </span>
+              </div>
+              <div className="flex-1 ml-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    {dept.department}
+                  </span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    {dept.avgRating.toFixed(1)}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full">
+                  <div
+                    className={`h-2 rounded-full ${
+                      index === 0
+                        ? "bg-amber-500"
+                        : index === 1
+                        ? "bg-gray-400"
+                        : "bg-orange-600"
+                    }`}
+                    style={{ width: `${(dept.avgRating / 5) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <DepartmentChart />
+        <MonthlyTrendChart />
+      </div>
     </div>
   );
-};
-
-export default AnalyticsPage;
+}

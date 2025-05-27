@@ -1,39 +1,61 @@
-"use client"
+'use client';
 
-import React ,{createContext , useContext, useEffect , useState} from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { generateDepartment, generatePerformanceRating } from '@/lib/utils';
 
-export  const  userContext =  createContext();
+const UserContext = createContext();
 
-export const  UserProvider = ({children}) =>{
-    const [users , setUsers] =  useState([]);
-    const [loading , setLoading] =  useState(true);
+export function UserProvider({ children }) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-    useEffect(()=>{
-        const  fetchUsers = async()=>{
-            setLoading(true);
-            try{
-                const response = await fetch('https://dummyjson.com/users?limit=20');
-                const data = await response.json();
-                console.log("users fetched successfully : ", data.users)
-                setUsers(data.users);
-            }catch(err){
-                console.error("there is  some  error in  fetching users : " , err)
-
-            }finally{
-                setLoading(false);
-            }
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        setLoading(true);
+        const response = await fetch('https://dummyjson.com/users?limit=20');
+        if (!response.ok) {
+          throw new Error('Failed to fetch users');
         }
-        fetchUsers()
-    },[])
+        const data = await response.json();
 
-    return(
-        <userContext.Provider value={{users , setUsers , loading}}>
-            {children}
-        </userContext.Provider>
-    )
+        // Enhance user data with department and performance info
+        const enhancedUsers = data.users.map(user => ({
+          ...user,
+          department: generateDepartment(),
+          performanceRating: generatePerformanceRating(),
+          promoted: false
+        }));
+
+        setUsers(enhancedUsers);
+      } catch (err) {
+        setError(err.message || 'An unknown error occurred');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchUsers();
+  }, []);
+
+  const promoteUser = (userId) => {
+    setUsers(users.map(user =>
+      user.id === userId ? { ...user, promoted: true } : user
+    ));
+  };
+
+  return (
+    <UserContext.Provider value={{ users, loading, error, promoteUser }}>
+      {children}
+    </UserContext.Provider>
+  );
 }
 
-
-export  const useUsers = ()=>{
-    return useContext(userContext)
+export function useUsers() {
+  const context = useContext(UserContext);
+  if (context === undefined) {
+    throw new Error('useUsers must be used within a UserProvider');
+  }
+  return context;
 }

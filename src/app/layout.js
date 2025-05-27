@@ -23,7 +23,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
+      <body className="bg-amber-50">
         <ThemeProvider>
           <UserProvider>
             <BookmarkProvider>
