@@ -6,8 +6,8 @@ import { Bookmark, BookmarkCheck, ChevronRight, Award } from 'lucide-react';
 import { useBookmarks } from '@/context/BookmarkContext';
 import { useUsers } from '@/context/UserContext';
 import { ThemeContext } from '@/context/ThemeContext';
-import { Rating } from '@/components/ui/rating';
-
+import Rating from '@/components/ui/rating';
+import { useMemo } from 'react'
 const getPerformanceColor = (rating) => {
   if (rating >= 4) return 'bg-green-500';
   if (rating >= 3) return 'bg-yellow-500';
@@ -25,10 +25,11 @@ export default function UserCard({ user }) {
   const { promoteUser } = useUsers();
   const { theme } = useContext(ThemeContext);
 
-  const bookmarked = isBookmarked(user.id);
+const bookmarked = isBookmarked(user.id);
 
   const handleBookmarkToggle = (e) => {
     e.preventDefault();
+    console.log('Bookmark toggle clicked for user:', user.id);
     bookmarked ? removeBookmark(user.id) : addBookmark(user);
   };
 
@@ -104,7 +105,8 @@ export default function UserCard({ user }) {
                 : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
             }`}
           >
-            {bookmarked ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
+          {isBookmarked(user.id) ? <BookmarkCheck /> : <Bookmark />}
+
           </button>
 
           <button

@@ -3,6 +3,7 @@ import "./globals.css";
 import { UserProvider } from '@/context/UserContext';
 import { BookmarkProvider } from '@/context/BookmarkContext';
 import { ThemeProvider } from '@/context/ThemeContext';
+import Navbar from "@/components/ui/navbar";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -19,7 +20,6 @@ export const metadata = {
 };
 
 
-
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
@@ -27,7 +27,8 @@ export default function RootLayout({ children }) {
         <ThemeProvider>
           <UserProvider>
             <BookmarkProvider>
-              {children}
+              <Navbar/>
+              <main className="p-4  max-w-7xl  mx-auto">{children}</main>
             </BookmarkProvider>
           </UserProvider>
         </ThemeProvider>

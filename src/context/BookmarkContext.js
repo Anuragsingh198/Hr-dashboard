@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 export const BookmarkContext = createContext();
 
@@ -16,10 +16,11 @@ export const BookmarkProvider = ({ children }) => {
 
     useEffect(() => {
         localStorage.setItem('bookmarkedUsers', JSON.stringify(bookmarks));
+        console.log("Bookmarks updated:", bookmarks);
     }, [bookmarks]);
 
-    const addBookmark = (userId) => {
-        setBookmarks((prev) => [...prev, { id: userId }]);
+    const addBookmark = (user) => {
+        setBookmarks((prev) => [...prev, user]);
     };
 
     const removeBookmark = (userId) => {
@@ -27,6 +28,7 @@ export const BookmarkProvider = ({ children }) => {
     };
 
     const isBookmarked = (userId) => {
+        // console.log("Checking if user is bookmarked:", userId , bookmarks.some((u) => u.id === userId));
         return bookmarks.some((u) => u.id === userId);
     };
 
@@ -36,3 +38,9 @@ export const BookmarkProvider = ({ children }) => {
         </BookmarkContext.Provider>
     );
 };
+
+
+
+export  const  useBookmarks  = ()=>{
+    return   useContext(BookmarkContext);
+}
